@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react'
-import { Button, ColorPicker, InputNumber, Input, Space, Slider, Typography, message, Tooltip, Divider, Select } from 'antd'
+import { Button, ColorPicker, InputNumber, Input, Space, Slider, Typography, message, Tooltip, Divider, Select, Drawer } from 'antd'
 import {
   SaveOutlined, UndoOutlined, RedoOutlined,
   AlignLeftOutlined, AlignCenterOutlined, AlignRightOutlined,
   ZoomInOutlined, ZoomOutOutlined,
   BoldOutlined, PictureOutlined, FormOutlined,
+  AppstoreOutlined, SettingOutlined,
 } from '@ant-design/icons'
 
 const { Text } = Typography
@@ -162,6 +163,9 @@ export default function TemplateEditor({ template, onTemplateChange, onSave }) {
   const handleZoomIn = () => setZoom(z => Math.min(z + 10, 200))
   const handleZoomOut = () => setZoom(z => Math.max(z - 10, 50))
 
+  const [mobileLeftOpen, setMobileLeftOpen] = useState(false)
+  const [mobileRightOpen, setMobileRightOpen] = useState(false)
+
   const renderLayoutItem = (item) => {
     const isSelected = selectedItem?.id === item.id
 
@@ -231,7 +235,13 @@ export default function TemplateEditor({ template, onTemplateChange, onSave }) {
     >
       {/* 顶部工具栏 */}
       <div className="template-editor-toolbar">
-        <Space>
+        <Space wrap>
+          <Button icon={<AppstoreOutlined />} onClick={() => setMobileLeftOpen(!mobileLeftOpen)} size="small" className="mobile-only">
+            元素
+          </Button>
+          <Button icon={<SettingOutlined />} onClick={() => setMobileRightOpen(!mobileRightOpen)} size="small" className="mobile-only">
+            属性
+          </Button>
           <Tooltip title="撤销">
             <Button icon={<UndoOutlined />} onClick={handleUndo} disabled={historyIndex === 0} size="small" />
           </Tooltip>
@@ -272,8 +282,8 @@ export default function TemplateEditor({ template, onTemplateChange, onSave }) {
       </div>
 
       <div className="template-editor-body">
-        {/* 左侧元素面板 */}
-        <div className="template-editor-elements">
+        {/* 左侧元素面板 - 桌面端 */}
+        <div className="template-editor-elements desktop-only-panel">
           <div className="panel-header">
             <FormOutlined /> 元素列表
           </div>
@@ -320,6 +330,57 @@ export default function TemplateEditor({ template, onTemplateChange, onSave }) {
             </div>
           </div>
         </div>
+
+        {/* 左侧面板 - 移动端 Drawer */}
+        <Drawer
+          title="元素列表 & 模板样式"
+          placement="left"
+          open={mobileLeftOpen}
+          onClose={() => setMobileLeftOpen(false)}
+          width={260}
+          styles={{ body: { padding: 0 } }}
+        >
+          <div className="element-list" style={{ padding: 8 }}>
+            {layoutItems.map(item => (
+              <div
+                key={item.id}
+                className={`element-item ${selectedItem?.id === item.id ? 'active' : ''}`}
+                onClick={() => { setSelectedItem(item); setMobileLeftOpen(false) }}
+              >
+                {item.type === 'image' ? <PictureOutlined /> : <FormOutlined />}
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+          <Divider style={{ margin: '12px 0' }} />
+          <div style={{ padding: '12px 16px' }}>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>模板样式</Text>
+            <div className="style-item">
+              <Text style={{ fontSize: 12 }}>背景色</Text>
+              <ColorPicker
+                value={template.backgroundColor}
+                onChange={(color) => onTemplateChange({ ...template, backgroundColor: color.toHexString() })}
+                size="small"
+              />
+            </div>
+            <div className="style-item">
+              <Text style={{ fontSize: 12 }}>文字色</Text>
+              <ColorPicker
+                value={template.textColor}
+                onChange={(color) => onTemplateChange({ ...template, textColor: color.toHexString() })}
+                size="small"
+              />
+            </div>
+            <div className="style-item">
+              <Text style={{ fontSize: 12 }}>强调色</Text>
+              <ColorPicker
+                value={template.accentColor}
+                onChange={(color) => onTemplateChange({ ...template, accentColor: color.toHexString() })}
+                size="small"
+              />
+            </div>
+          </div>
+        </Drawer>
 
         {/* 中间画布区域 */}
         <div className="template-editor-canvas-area">
@@ -433,8 +494,8 @@ export default function TemplateEditor({ template, onTemplateChange, onSave }) {
           </div>
         </div>
 
-        {/* 右侧属性面板 */}
-        <div className="template-editor-properties">
+        {/* 右侧属性面板 - 桌面端 */}
+        <div className="template-editor-properties desktop-only-panel">
           {selectedItem ? (
             <>
               <div className="panel-header">属性设置 - {selectedItem.label}</div>
@@ -608,6 +669,118 @@ export default function TemplateEditor({ template, onTemplateChange, onSave }) {
             </div>
           )}
         </div>
+
+        {/* 右侧属性面板 - 移动端 Drawer */}
+        <Drawer
+          title={selectedItem ? `属性 - ${selectedItem.label}` : '画布设置'}
+          placement="bottom"
+          open={mobileRightOpen}
+          onClose={() => setMobileRightOpen(false)}
+          height="55vh"
+          styles={{ body: { padding: '12px 16px' } }}
+        >
+          {selectedItem ? (
+            <>
+              {selectedItem.type !== 'image' && (
+                <div className="property-group">
+                  <Text type="secondary" style={{ fontSize: 12 }}>文案内容</Text>
+                  <div className="property-field">
+                    <Input.TextArea
+                      value={selectedItem.text || ''}
+                      onChange={(e) => handleItemUpdate('text', e.target.value)}
+                      placeholder="输入文案内容"
+                      rows={2}
+                      size="small"
+                      style={{ fontSize: 12 }}
+                    />
+                  </div>
+                </div>
+              )}
+              <Divider style={{ margin: '10px 0' }} />
+              <div className="property-group">
+                <Text type="secondary" style={{ fontSize: 12 }}>位置与尺寸</Text>
+                <div className="property-row">
+                  <div className="property-field">
+                    <Text style={{ fontSize: 12 }}>X</Text>
+                    <InputNumber value={selectedItem.x} onChange={(v) => handleItemUpdate('x', v)} size="small" style={{ width: '100%' }} />
+                  </div>
+                  <div className="property-field">
+                    <Text style={{ fontSize: 12 }}>Y</Text>
+                    <InputNumber value={selectedItem.y} onChange={(v) => handleItemUpdate('y', v)} size="small" style={{ width: '100%' }} />
+                  </div>
+                </div>
+                <div className="property-row">
+                  <div className="property-field">
+                    <Text style={{ fontSize: 12 }}>宽</Text>
+                    <InputNumber value={selectedItem.width} onChange={(v) => handleItemUpdate('width', v)} min={20} size="small" style={{ width: '100%' }} />
+                  </div>
+                  <div className="property-field">
+                    <Text style={{ fontSize: 12 }}>高</Text>
+                    <InputNumber value={selectedItem.height} onChange={(v) => handleItemUpdate('height', v)} min={20} size="small" style={{ width: '100%' }} />
+                  </div>
+                </div>
+              </div>
+              <Divider style={{ margin: '12px 0' }} />
+              <div className="property-group">
+                <Text type="secondary" style={{ fontSize: 12 }}>文字样式</Text>
+                <div className="property-field">
+                  <Text style={{ fontSize: 12 }}>字体</Text>
+                  <Select
+                    value={selectedItem.fontFamily || template.fontFamily}
+                    onChange={(v) => handleItemUpdate('fontFamily', v)}
+                    options={[
+                      { label: '无衬线', value: 'sans-serif' },
+                      { label: '衬线', value: 'serif' },
+                      { label: '等宽', value: 'monospace' },
+                      { label: '手写', value: 'cursive' },
+                    ]}
+                    size="small"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div className="property-field">
+                  <Text style={{ fontSize: 12 }}>字号: {selectedItem.fontSize}px</Text>
+                  <Slider value={selectedItem.fontSize} onChange={(v) => handleItemUpdate('fontSize', v)} min={10} max={72} />
+                </div>
+                <div className="property-row">
+                  <Tooltip title="粗体">
+                    <Button icon={<BoldOutlined />} type={selectedItem.fontWeight === 'bold' ? 'primary' : 'default'}
+                      onClick={() => handleItemUpdate('fontWeight', selectedItem.fontWeight === 'bold' ? 'normal' : 'bold')} size="small" />
+                  </Tooltip>
+                  <Button.Group size="small">
+                    <Button icon={<AlignLeftOutlined />} type={selectedItem.textAlign === 'left' ? 'primary' : 'default'}
+                      onClick={() => handleItemUpdate('textAlign', 'left')} />
+                    <Button icon={<AlignCenterOutlined />} type={selectedItem.textAlign === 'center' ? 'primary' : 'default'}
+                      onClick={() => handleItemUpdate('textAlign', 'center')} />
+                    <Button icon={<AlignRightOutlined />} type={selectedItem.textAlign === 'right' ? 'primary' : 'default'}
+                      onClick={() => handleItemUpdate('textAlign', 'right')} />
+                  </Button.Group>
+                </div>
+                <div className="property-field">
+                  <Text style={{ fontSize: 12 }}>颜色</Text>
+                  <ColorPicker value={selectedItem.color || template.textColor}
+                    onChange={(color) => handleItemUpdate('color', color.toHexString())} size="small" />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>酒单尺寸</Text>
+              <div className="property-row" style={{ marginTop: 8 }}>
+                <div className="property-field">
+                  <Text style={{ fontSize: 12 }}>宽</Text>
+                  <InputNumber value={canvasSize.width} onChange={(v) => handleCanvasSizeChange({ ...canvasSize, width: v })}
+                    min={200} max={1200} size="small" style={{ width: '100%' }} />
+                </div>
+                <div className="property-field">
+                  <Text style={{ fontSize: 12 }}>高</Text>
+                  <InputNumber value={canvasSize.height} onChange={(v) => handleCanvasSizeChange({ ...canvasSize, height: v })}
+                    min={200} max={1200} size="small" style={{ width: '100%' }} />
+                </div>
+              </div>
+            </div>
+          )}
+        </Drawer>
       </div>
     </div>
   )

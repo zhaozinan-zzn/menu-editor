@@ -319,33 +319,90 @@
   min-width: 80px;
 }
 
+/* ---- Mobile-only toggle buttons ---- */
+.mobile-only {
+  display: none !important;
+}
+
+/* ---- Desktop panels hidden on mobile ---- */
 @media (max-width: 768px) {
+  .mobile-only {
+    display: inline-flex !important;
+  }
+
+  .desktop-only-panel {
+    display: none !important;
+  }
+
+  /* App layout */
+  .app-header {
+    padding: 0 12px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .app-header h1 {
+    font-size: 18px;
+  }
+  .app-content {
+    padding: 8px;
+  }
+  .ant-tabs-tab {
+    padding: 8px 12px !important;
+    font-size: 13px;
+  }
+
+  /* Login */
+  .login-card {
+    width: 100% !important;
+    margin: 0 12px;
+  }
+
+  /* Menu editor */
+  .menu-editor {
+    padding: 12px;
+  }
+  .editor-toolbar {
+    flex-direction: column;
+  }
+  .editor-toolbar .ant-space {
+    flex-wrap: wrap;
+  }
+  .menu-editor .ant-table {
+    font-size: 12px;
+  }
+
+  /* Template manager */
   .template-manager {
     grid-template-columns: 1fr;
   }
 
-  .menu-grid {
-    grid-template-columns: 1fr;
-  }
-
+  /* Preview list */
   .menu-grid-list {
     grid-template-columns: 1fr;
   }
-
-  .template-editor-elements {
-    width: 160px;
+  .menu-grid {
+    grid-template-columns: 1fr;
   }
-
-  .template-editor-properties {
-    width: 200px;
-  }
-
-  .editor-toolbar {
+  .preview-header {
     flex-direction: column;
+    gap: 12px;
   }
 
-  .editor-toolbar .ant-space {
+  /* Template editor - canvas full width, panels hidden */
+  .template-editor {
+    height: calc(100vh - 120px);
+  }
+  .template-editor-toolbar {
     flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+  .template-editor-canvas-area {
+    padding: 12px;
+  }
+  .menu-export-preview {
+    width: 100% !important;
+    padding: 20px !important;
   }
 }
 
